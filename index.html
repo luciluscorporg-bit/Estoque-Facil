@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17212b">
+<meta name="description" content="Leitor e catalogador de mercadorias para depósito.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Estoque Fácil — Catalogador</title>
+<style>
+:root{--bg:#eef2f5;--card:#fff;--ink:#18232d;--muted:#687783;--line:#dce3e8;--brand:#173b57;--brand2:#245d7d;--good:#16734a;--bad:#b33b36;--warn:#9a6414;--radius:16px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#142b3c,#24516b);color:white;padding:18px 16px 22px;position:sticky;top:0;z-index:5;box-shadow:0 3px 14px #142b3c25}
+.head{max-width:900px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.2px}.sub{font-size:12px;opacity:.8}
+main{max-width:900px;margin:16px auto;padding:0 12px 40px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;box-shadow:0 2px 8px #1b34440a}
+h2{font-size:16px;margin:0 0 12px}.muted{color:var(--muted);font-size:12px}
+button,.button{border:0;border-radius:12px;padding:12px 14px;background:var(--brand);color:white;font-weight:700;font-size:14px;cursor:pointer;min-height:44px}
+button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#e8eef2;color:var(--ink)}.danger{background:#f9e8e7;color:#922f2b}.success{background:var(--good)}.wide{width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row .fit{flex:0 0 auto}
+label{display:block;font-size:12px;font-weight:700;color:#43515d;margin:10px 0 5px}
+input,select{width:100%;padding:12px;border:1px solid #cbd5dc;border-radius:10px;background:#fff;color:var(--ink);font:inherit;min-height:44px}
+input:focus,select:focus{outline:2px solid #75a9c7;border-color:#75a9c7}
+#reader{width:100%;overflow:hidden;border-radius:12px;background:#101820;min-height:80px}
+#reader video{width:100%;max-height:300px;object-fit:cover}
+.status{padding:9px 11px;border-radius:9px;background:#edf3f6;color:#425563;font-size:12px;margin-top:9px}
+.status.good{background:#e8f5ee;color:#17613f}.status.warn{background:#fff4df;color:#80520d}.status.error{background:#fbeceb;color:#922f2b}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f3f6f8;border-radius:12px;padding:10px;text-align:center}.stat strong{display:block;font-size:22px}.stat span{font-size:11px;color:var(--muted)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar>*{flex:1}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line);vertical-align:middle}th{font-size:11px;text-transform:uppercase;color:#667681;letter-spacing:.4px}
+td.code{font-family:ui-monospace,monospace;word-break:break-all;font-size:11px}
+td.qty{font-weight:800;font-size:15px;white-space:nowrap}
+.actions{display:flex;gap:5px;flex-wrap:wrap}.actions button{padding:7px 9px;min-height:34px;font-size:12px}
+.tablewrap{overflow-x:auto}.empty{text-align:center;padding:24px;color:var(--muted)}
+.tabs{display:flex;gap:6px;overflow:auto}.tabs button{white-space:nowrap;padding:9px 12px;min-height:38px}
+small{font-size:11px;color:var(--muted)}
+#history{max-height:260px;overflow:auto}.hist{padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}
+dialog{border:0;border-radius:16px;max-width:440px;width:calc(100% - 28px);padding:18px;box-shadow:0 12px 50px #0005}
+dialog::backdrop{background:#10182099}.dialog-actions{display:flex;gap:8px;margin-top:16px}.dialog-actions button{flex:1}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:4px 0 18px}
+@media(min-width:700px){main{grid-template-columns:1fr 1fr}.full{grid-column:1/-1}header{padding-left:24px;padding-right:24px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>ESTOQUE FÁCIL</h1><div class="sub">Leitor e catalogador de mercadorias</div></div><div class="sub" id="connection">● Preparando...</div></div></header>
+<main>
+<section class="card">
+  <h2>Leitura de código de barras</h2>
+  <button class="wide" id="scanBtn">▣ ESCANEAR PRODUTO</button>
+  <div id="cameraArea" hidden style="margin-top:10px">
+    <div id="reader"></div>
+    <div class="row" style="margin-top:8px"><button class="secondary" id="stopBtn">Desativar câmera</button><button class="secondary" id="torchBtn" disabled>Lanterna</button></div>
+  </div>
+  <div class="status" id="scanStatus">A leitura usa a câmera traseira quando disponível. Autorize o acesso quando solicitado.</div>
+  <label for="barcode">Código de barras (ou deixe vazio para item sem código)</label>
+  <div class="row"><input id="barcode" inputmode="numeric" autocomplete="off" placeholder="Digite ou escaneie o código"><button class="fit secondary" id="lookupBtn">Pesquisar</button></div>
+  <label for="productName">Nome do produto</label><input id="productName" placeholder="Ex.: Arroz tipo 1 — 5 kg">
+  <div class="row">
+    <div><label for="quantity">Quantidade</label><input id="quantity" type="number" inputmode="decimal" min="0.001" step="1" value="1"></div>
+    <div><label for="unit">Unidade (opcional)</label><input id="unit" placeholder="un., cx., kg..."></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="success" id="addBtn">＋ ADICIONAR À LISTA</button><button class="secondary fit" id="clearBtn">Limpar</button></div>
+  <div class="muted" id="lookupHint" style="margin-top:8px">Produtos desconhecidos podem ser cadastrados manualmente. O catálogo salvo funciona sem internet.</div>
+</section>
+<section class="card">
+  <h2>Resumo do estoque</h2>
+  <div class="stats"><div class="stat"><strong id="productCount">0</strong><span>itens cadastrados</span></div><div class="stat"><strong id="unitCount">0</strong><span>unidades totais</span></div><div class="stat"><strong id="historyCount">0</strong><span>movimentações</span></div></div>
+  <div style="margin-top:14px"><label for="search">Pesquisar por nome ou código</label><input id="search" placeholder="Digite para filtrar..."></div>
+  <div class="row" style="margin-top:8px"><select id="sort"><option value="name">Ordem alfabética</option><option value="qtyDesc">Maior quantidade</option><option value="qtyAsc">Menor quantidade</option><option value="recent">Mais recentes</option></select><button class="secondary fit" id="countMode">Modo contagem: desligado</button></div>
+</section>
+<section class="card full">
+  <div class="row"><h2 style="margin:0;flex:1">Mercadorias cadastradas</h2><span class="muted" id="shownCount">0 registros</span></div>
+  <div class="tablewrap"><table><thead><tr><th>Código</th><th>Produto</th><th>Qtd.</th><th>Ações</th></tr></thead><tbody id="productRows"></tbody></table></div>
+  <div class="empty" id="empty">Nenhum produto cadastrado ainda.</div>
+</section>
+<section class="card full">
+  <h2>Exportar e preservar dados</h2>
+  <div class="toolbar">
+    <button id="exportCsv">Exportar CSV</button><button id="exportXlsx" class="secondary">Exportar XLSX</button><button id="exportTxt" class="secondary">Exportar TXT</button>
+  </div>
+  <div class="toolbar" style="margin-top:8px"><button id="backupBtn" class="secondary">Fazer backup (JSON)</button><button id="importBtn" class="secondary">Restaurar backup</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+  <div class="muted" style="margin-top:10px">Os arquivos são gerados no próprio aparelho. Se o navegador oferecer escolha de pasta, selecione o destino; caso contrário, o arquivo vai para Downloads.</div>
+</section>
+<section class="card full">
+  <h2>Histórico recente</h2><div id="history"><div class="empty">Nenhuma movimentação registrada.</div></div>
+</section>
+<footer>Dados armazenados localmente neste navegador · Faça backups regulares.</footer>
+</main>
+<dialog id="editDialog"><h2>Editar mercadoria</h2><input type="hidden" id="editId"><label>Código de barras</label><input id="editCode"><label>Nome do produto</label><input id="editName"><label>Quantidade atual</label><input id="editQty" type="number" min="0" step="0.001"><label>Unidade</label><input id="editUnit"><div class="dialog-actions"><button class="secondary" id="cancelEdit">Cancelar</button><button id="saveEdit">Salvar alterações</button></div></dialog>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+'use strict';
+const DB_NAME='estoque-facil-db', DB_VERSION=1;
+let db, scannerStream=null, scanLoop=null, detector=null, lastScan='', lastScanAt=0, torchOn=false, countMode=false;
+const $=id=>document.getElementById(id);
+const now=()=>new Date().toISOString();
+const fmtDate=s=>new Date(s).toLocaleString('pt-BR');
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('products')){const p=d.createObjectStore('products',{keyPath:'id',autoIncrement:true});p.createIndex('barcode','barcode',{unique:false});p.createIndex('name','name',{unique:false});}if(!d.objectStoreNames.contains('history'))d.createObjectStore('history',{keyPath:'id',autoIncrement:true});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+function store(name,mode='readonly'){return db.transaction(name,mode).objectStore(name)}
+function reqPromise(req){return new Promise((res,rej)=>{req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error);});}
+async function all(name){return reqPromise(store(name).getAll());}
+async function addHistory(action,p,delta){await reqPromise(store('history','readwrite').add({action,barcode:p.barcode||'',name:p.name,delta,quantity:p.quantity,at:now()}));}
+async function findByCode(code){if(!code)return null;const list=await all('products');return list.find(p=>p.barcode===code)||null;}
+async function render(){const products=await all('products'), history=await all('history');const q=$('search').value.trim().toLowerCase();let arr=products.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.barcode||'').includes(q));const sort=$('sort').value;if(sort==='name')arr.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));if(sort==='qtyDesc')arr.sort((a,b)=>b.quantity-a.quantity);if(sort==='qtyAsc')arr.sort((a,b)=>a.quantity-b.quantity);if(sort==='recent')arr.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));$('productCount').textContent=products.length;$('unitCount').textContent=products.reduce((n,p)=>n+Number(p.quantity||0),0).toLocaleString('pt-BR');$('historyCount').textContent=history.length;$('shownCount').textContent=arr.length+' registros';$('empty').hidden=arr.length>0;$('productRows').innerHTML=arr.map(p=>`<tr><td class="code">${esc(p.barcode||'—')}</td><td><strong>${esc(p.name)}</strong>${p.unit?`<br><small>${esc(p.unit)}</small>`:''}</td><td class="qty">${Number(p.quantity).toLocaleString('pt-BR')}</td><td><div class="actions"><button class="secondary" data-act="minus" data-id="${p.id}">−</button><button class="secondary" data-act="plus" data-id="${p.id}">＋</button><button class="secondary" data-act="edit" data-id="${p.id}">Editar</button><button class="danger" data-act="delete" data-id="${p.id}">Excluir</button></div></td></tr>`).join('');const recent=history.sort((a,b)=>b.at.localeCompare(a.at)).slice(0,30);$('history').innerHTML=recent.length?recent.map(h=>`<div class="hist"><strong>${esc(h.action)}</strong> · ${esc(h.name)} · ${h.delta>0?'+':''}${h.delta} (saldo ${h.quantity})<br><small>${fmtDate(h.at)} · ${esc(h.barcode||'sem código')}</small></div>`).join(''):'<div class="empty">Nenhuma movimentação registrada.</div>';}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function status(msg,type=''){ $('scanStatus').textContent=msg;$('scanStatus').className='status '+type;}
+async function lookupProduct(code){if(!code){status('Informe um código para pesquisar.','warn');return;}const local=await findByCode(code);if(local){$('productName').value=local.name;$('quantity').value=1;$('unit').value=local.unit||'';$('lookupHint').textContent='Produto já cadastrado. Ao adicionar, a quantidade será somada ao saldo existente.';status('Produto encontrado no catálogo local.','good');return;}
+ $('lookupHint').textContent='Pesquisando em Open Food Facts...';status('Consultando catálogo público.','');
+ try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json',{headers:{'Accept':'application/json'}});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();if(data.status===1&&data.product){const p=data.product;const name=p.product_name_pt||p.product_name||p.generic_name_pt||p.generic_name||'';if(name){$('productName').value=name;$('unit').value=p.quantity||'';$('lookupHint').textContent='Nome sugerido pelo Open Food Facts. Confira antes de salvar.';status('Produto localizado na base pública.','good');return;}}$('lookupHint').textContent='Produto não localizado. Digite o nome manualmente.';status('Código não encontrado na base pública. Cadastro manual disponível.','warn');
+ }catch(e){$('lookupHint').textContent='Sem conexão ou serviço indisponível. Digite o nome manualmente; o cadastro local continua funcionando.';status('Não foi possível pesquisar na internet.','warn');}}
+async function addProduct(){const barcode=$('barcode').value.trim(),name=$('productName').value.trim(),qty=Number($('quantity').value),unit=$('unit').value.trim();if(!name){status('Informe o nome do produto antes de adicionar.','error');$('productName').focus();return;}if(!Number.isFinite(qty)||qty<=0){status('A quantidade deve ser maior que zero.','error');return;}const existing=barcode?await findByCode(barcode):null;if(existing){existing.quantity=Number(existing.quantity)+qty;existing.updatedAt=now();if(name)existing.name=name;if(unit)existing.unit=unit;await reqPromise(store('products','readwrite').put(existing));await addHistory('Quantidade adicionada',existing,qty);status('Quantidade somada ao produto existente.','good');}
+ else{const p={barcode,name,quantity:qty,unit,createdAt:now(),updatedAt:now()};const id=await reqPromise(store('products','readwrite').add(p));p.id=id;await addHistory('Produto cadastrado',p,qty);status('Produto cadastrado com sucesso.','good');}
+ await render();$('barcode').value='';$('productName').value='';$('quantity').value=1;$('unit').value='';$('lookupHint').textContent='Pronto para a próxima leitura.';}
+async function quickChange(id,delta){const p=await reqPromise(store('products').get(Number(id)));if(!p)return;const next=Number(p.quantity)+delta;if(next<0){status('A quantidade não pode ficar negativa.','warn');return;}p.quantity=next;p.updatedAt=now();await reqPromise(store('products','readwrite').put(p));await addHistory(delta>0?'Ajuste positivo':'Ajuste negativo',p,delta);await render();}
+function editProduct(id){store('products').get(Number(id)).onsuccess=e=>{const p=e.target.result;if(!p)return;$('editId').value=p.id;$('editCode').value=p.barcode||'';$('editName').value=p.name;$('editQty').value=p.quantity;$('editUnit').value=p.unit||'';$('editDialog').showModal();};}
+async function saveEdit(){const id=Number($('editId').value),p=await reqPromise(store('products').get(id));if(!p)return;const code=$('editCode').value.trim(),name=$('editName').value.trim(),qty=Number($('editQty').value);if(!name||!Number.isFinite(qty)||qty<0){alert('Confira o nome e a quantidade.');return;}if(code&&code!==p.barcode){const dupe=await findByCode(code);if(dupe&&dupe.id!==id){alert('Esse código já pertence a outro produto.');return;}}const old=p.quantity;p.barcode=code;p.name=name;p.quantity=qty;p.unit=$('editUnit').value.trim();p.updatedAt=now();await reqPromise(store('products','readwrite').put(p));if(old!==qty)await addHistory('Quantidade editada',p,qty-old);$('editDialog').close();await render();}
+async function startCamera(){if(!navigator.mediaDevices?.getUserMedia){status('Este navegador não oferece acesso à câmera. Use o campo manual.','error');return;}if(!('BarcodeDetector'in window)){status('Leitor nativo indisponível neste navegador. Use Chrome atualizado ou digite o código manualmente.','warn');return;}try{const supported=await BarcodeDetector.getSupportedFormats();const wanted=['ean_13','ean_8','upc_a','upc_e','code_128'];const formats=wanted.filter(x=>supported.includes(x));detector=new BarcodeDetector({formats});scannerStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});const video=document.createElement('video');video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=scannerStream;const area=$('reader');area.innerHTML='';area.appendChild(video);$('cameraArea').hidden=false;await video.play();const track=scannerStream.getVideoTracks()[0];const caps=track.getCapabilities?.();$('torchBtn').disabled=!caps?.torch;status('Câmera ativa. Aponte para o código de barras.','good');const tick=async()=>{if(!scannerStream)return;try{if(video.readyState>=2){const codes=await detector.detect(video);if(codes.length){const code=codes[0].rawValue;const t=Date.now();if(code!==lastScan||t-lastScanAt>1800){lastScan=code;lastScanAt=t;if(countMode){const known=await findByCode(code);if(known){await quickChange(known.id,1);$('barcode').value=code;$('productName').value=known.name;status('Contagem: +1 em '+known.name+'. Saldo atualizado.','good');}else{$('barcode').value=code;await lookupProduct(code);status('Produto novo: confira o nome e toque em Adicionar à lista.','warn');}}else{$('barcode').value=code;await lookupProduct(code);}}}}}catch(e){}scanLoop=requestAnimationFrame(tick);};scanLoop=requestAnimationFrame(tick);}catch(e){stopCamera();status('Não foi possível abrir a câmera: '+(e.message||e),'error');}}
+function stopCamera(){if(scanLoop)cancelAnimationFrame(scanLoop);scanLoop=null;if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}$('reader').innerHTML='';$('cameraArea').hidden=true;torchOn=false;$('torchBtn').textContent='Lanterna';}
+async function toggleTorch(){if(!scannerStream)return;const track=scannerStream.getVideoTracks()[0];try{torchOn=!torchOn;await track.applyConstraints({advanced:[{torch:torchOn}]});$('torchBtn').textContent=torchOn?'Desligar lanterna':'Lanterna';}catch(e){torchOn=false;status('Lanterna não suportada neste aparelho.','warn');}}
+function filename(ext){const d=new Date();return 'estoque_'+d.toISOString().slice(0,10)+'_'+d.toTimeString().slice(0,5).replace(':','-')+'.'+ext;}
+async function saveBlob(blob,name){if(window.showSaveFilePicker){try{const h=await showSaveFilePicker({suggestedName:name,types:[{description:'Arquivo',accept:{[blob.type||'application/octet-stream']:['.'+name.split('.').pop()]}}]});const w=await h.createWritable();await w.write(blob);await w.close();return;}catch(e){if(e.name==='AbortError')return;}}const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
+async function exportData(type){const ps=(await all('products')).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));if(!ps.length){alert('Não há produtos para exportar.');return;}const rows=[['Código de barras','Produto','Quantidade'],...ps.map(p=>[p.barcode||'',p.name,p.quantity])];if(type==='xlsx'){if(!window.XLSX){alert('Biblioteca XLSX indisponível. Verifique a internet e tente novamente; CSV continua disponível.');return;}const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:20},{wch:42},{wch:14}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Mercadorias');const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),filename('xlsx'));return;}
+const sep=type==='csv'?';':' | ';const content=rows.slice(1).map(r=>r.map(v=>String(v).replace(/[\r\n]+/g,' ')).join(sep)).join('\r\n');const blob=new Blob(['\ufeff'+(type==='csv'?'Código de barras;Produto;Quantidade\r\n':'')+content],{type:type==='csv'?'text/csv;charset=utf-8':'text/plain;charset=utf-8'});await saveBlob(blob,filename(type));}
+async function backup(){const data={app:'Estoque Fácil',version:1,exportedAt:now(),products:await all('products'),history:await all('history')};await saveBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),filename('json'));}
+async function restore(file){try{const data=JSON.parse(await file.text());if(!Array.isArray(data.products))throw Error('Arquivo não contém a lista de produtos.');if(!confirm('A restauração substituirá os dados atuais. Deseja continuar?'))return;const tx=db.transaction(['products','history'],'readwrite');const p=tx.objectStore('products'),h=tx.objectStore('history');p.clear();h.clear();data.products.forEach(x=>{const copy={...x};delete copy.id;p.add(copy);});(data.history||[]).forEach(x=>{const copy={...x};delete copy.id;h.add(copy);});tx.oncomplete=()=>{render();status('Backup restaurado.','good');};tx.onerror=()=>status('Falha ao restaurar backup.','error');}catch(e){alert('Não foi possível restaurar: '+e.message);}}
+$('scanBtn').onclick=startCamera;$('stopBtn').onclick=stopCamera;$('torchBtn').onclick=toggleTorch;$('lookupBtn').onclick=()=>lookupProduct($('barcode').value.trim());$('addBtn').onclick=addProduct;$('clearBtn').onclick=()=>{$('barcode').value='';$('productName').value='';$('quantity').value=1;$('unit').value='';status('Campos limpos.');};$('search').oninput=render;$('sort').onchange=render;$('cancelEdit').onclick=()=>$('editDialog').close();$('saveEdit').onclick=saveEdit;
+$('productRows').addEventListener('click',async e=>{const b=e.target.closest('button[data-act]');if(!b)return;const id=b.dataset.id,act=b.dataset.act;if(act==='plus')quickChange(id,1);if(act==='minus')quickChange(id,-1);if(act==='edit')editProduct(id);if(act==='delete'){const p=await reqPromise(store('products').get(Number(id)));if(p&&confirm('Excluir "'+p.name+'"?')){await reqPromise(store('products','readwrite').delete(Number(id)));await addHistory('Produto excluído',p,-Number(p.quantity));render();}}});
+$('exportCsv').onclick=()=>exportData('csv');$('exportXlsx').onclick=()=>exportData('xlsx');$('exportTxt').onclick=()=>exportData('txt');$('backupBtn').onclick=backup;$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value='';};$('countMode').onclick=()=>{countMode=!countMode;$('countMode').textContent='Modo contagem: '+(countMode?'ligado':'desligado');$('quantity').value=1;status(countMode?'Modo contagem ativado: cada leitura adicionada soma 1 unidade, salvo se ajustar a quantidade.':'Modo contagem desativado.');};
+(async()=>{try{db=await openDB();await render();$('connection').textContent=navigator.onLine?'● Online':'● Offline';}catch(e){status('Erro ao iniciar banco local: '+e.message,'error');}})();
+window.addEventListener('online',()=>$('connection').textContent='● Online');window.addEventListener('offline',()=>$('connection').textContent='● Offline');
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>

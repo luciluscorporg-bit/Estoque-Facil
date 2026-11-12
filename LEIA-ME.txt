@@ -1,0 +1,40 @@
+# Estoque Fácil — Leitor e Catalogador de Mercadorias
+
+Aplicação web/PWA para Android, com armazenamento local IndexedDB, leitura por câmera usando a API BarcodeDetector do navegador, pesquisa opcional no Open Food Facts, cadastro, soma de quantidades, histórico, exportação CSV/TXT/XLSX e backup/restauração JSON.
+
+## Arquivos
+- `index.html`: aplicação completa.
+- `manifest.webmanifest`: configuração instalável.
+- `sw.js`: cache básico para abrir a aplicação offline.
+
+## Executar no Android
+1. Hospede os três arquivos em um endereço HTTPS (por exemplo, GitHub Pages, Netlify ou hospedagem própria). A câmera exige HTTPS ou localhost.
+2. Abra o endereço no Chrome Android.
+3. Toque em **ESCANEAR PRODUTO** e permita o uso da câmera.
+4. Para instalar, abra o menu ⋮ do Chrome e escolha **Instalar app** ou **Adicionar à tela inicial**.
+
+Abrir o `index.html` diretamente como arquivo local pode bloquear a câmera e o Service Worker. Para testes locais, use um servidor HTTPS ou localhost.
+
+## Leitura
+A leitura usa `BarcodeDetector`, recurso nativo de navegadores compatíveis. O app solicita os formatos EAN-13, EAN-8, UPC-A, UPC-E e Code 128 disponíveis no aparelho. Alguns navegadores/dispositivos não implementam essa API; nesses casos, use Chrome atualizado ou digite o código no campo manual. A câmera traseira é preferida. O app mantém a câmera ativa até desativá-la e aplica um intervalo antirrepetição de leitura.
+
+## Pesquisa de produtos
+Ao pesquisar um código, o app consulta primeiro o catálogo local. Se não existir, tenta a API pública Open Food Facts (`world.openfoodfacts.org`). A base é colaborativa e tem cobertura desigual, especialmente para produtos que não sejam alimentos. Nome e quantidade/unidade sugeridos devem ser conferidos. Sem internet, produtos já cadastrados continuam disponíveis e novos podem ser cadastrados manualmente.
+
+## Dados e confiabilidade
+Os produtos e o histórico ficam no IndexedDB do navegador, no próprio aparelho/perfil. Fechar o navegador ou atualizar a página não apaga os registros. Limpar os dados do site, desinstalar o navegador ou trocar de aparelho pode apagar os dados; faça backup JSON regularmente e mantenha uma cópia fora do celular. O backup inclui produtos e histórico.
+
+## Exportar
+- CSV: separado por ponto e vírgula, compatível com Excel/Google Planilhas em configurações brasileiras.
+- XLSX: gerado pela biblioteca SheetJS carregada de CDN; precisa de internet para carregar a biblioteca. Se ela não carregar, CSV continua disponível.
+- TXT: linhas no formato `código | produto | quantidade`.
+- Backup JSON: use **Fazer backup**. Para recuperar, toque em **Restaurar backup** e selecione o JSON. A restauração substitui os dados atuais após confirmação.
+
+O navegador baixa os arquivos para Downloads quando não oferece seletor de destino. Em navegadores compatíveis, o app abre a opção de escolher nome e pasta.
+
+## Observações importantes
+- Não há sincronização em nuvem nem múltiplos usuários nesta versão.
+- A pesquisa online não é garantia de identificação correta; confirme o nome antes de cadastrar.
+- Quantidades aceitam valores decimais. Código vazio permite cadastrar produto sem código.
+- No caso de códigos duplicados, o app soma a quantidade no registro existente.
+- Para uso operacional, teste primeiro com poucos produtos e valide os arquivos exportados antes de fazer o inventário completo.

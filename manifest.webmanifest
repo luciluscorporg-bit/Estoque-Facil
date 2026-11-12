@@ -1,0 +1,10 @@
+{
+  "name": "Estoque Fácil — Leitor e Catalogador",
+  "short_name": "Estoque Fácil",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2f5",
+  "theme_color": "#17212b",
+  "description": "Leitor de códigos de barras e controle local de mercadorias."
+}
