@@ -1,40 +1,45 @@
-# Estoque Fácil — Leitor e Catalogador de Mercadorias
+ESTOQUE FÁCIL — VERSÃO 2
+=========================
 
-Aplicação web/PWA para Android, com armazenamento local IndexedDB, leitura por câmera usando a API BarcodeDetector do navegador, pesquisa opcional no Open Food Facts, cadastro, soma de quantidades, histórico, exportação CSV/TXT/XLSX e backup/restauração JSON.
+Arquivos: index.html, manifest.webmanifest, sw.js e este manual.
 
-## Arquivos
-- `index.html`: aplicação completa.
-- `manifest.webmanifest`: configuração instalável.
-- `sw.js`: cache básico para abrir a aplicação offline.
+NOVIDADES v2.2
+- Resultados parciais (sem nome) das bases abertas agora preenchem marca/quantidade/categoria/foto e pedem só o nome.
+- UPCitemdb removido (bloqueado pelo navegador).
+- Diagnóstico por fonte e links de pesquisa manual quando nada é achado.
 
-## Executar no Android
-1. Hospede os três arquivos em um endereço HTTPS (por exemplo, GitHub Pages, Netlify ou hospedagem própria). A câmera exige HTTPS ou localhost.
-2. Abra o endereço no Chrome Android.
-3. Toque em **ESCANEAR PRODUTO** e permita o uso da câmera.
-4. Para instalar, abra o menu ⋮ do Chrome e escolha **Instalar app** ou **Adicionar à tela inicial**.
+NOVIDADES v2
+- Campos para marca, fabricante, categoria e URL de foto.
+- Busca ampliada: catálogo local, OSCBR V4 (token opcional), Open Food Facts, Open Products Facts, Open Beauty Facts, Open Pet Food Facts.
+- Pesquisa local por nome, código, marca e categoria.
+- Metadados incluídos em CSV/XLSX e backup JSON.
+- Mantém o banco IndexedDB existente (mesmo nome do banco; atualização de versão do esquema).
 
-Abrir o `index.html` diretamente como arquivo local pode bloquear a câmera e o Service Worker. Para testes locais, use um servidor HTTPS ou localhost.
+FONTES E LIMITAÇÕES
+1. OSCBR: integração V4 por GET https://gtin.rscsistemas.com.br/api/v4/gtin/{GTIN}. Exige token Bearer. Crie uma conta em https://gtin.rscsistemas.com.br/cadastro e consulte a documentação em https://gtin.rscsistemas.com.br/documentacao. O token pode ser informado na seção Fontes de pesquisa dentro do app; fica no armazenamento local do navegador, não no GitHub. Isso não é armazenamento seguro contra alguém com acesso ao aparelho/perfil. Para uso empresarial, implemente um backend/proxy com segredo no servidor. O plano deve liberar V4; caso contrário, será necessário V3 ou plano compatível.
+2. UPCitemdb: removido na v2.2 (o navegador bloqueia a consulta por CORS).
+3. Open Food Facts e as bases Open Products/Beauty/Pet Facts são colaborativas. Cobertura e disponibilidade variam.
+4. ConsultaProdutos: a página oficial da API informa que endpoints e autenticação serão publicados na fase de produção. Não foi implementada uma chamada inventada. Use https://consultaprodutos.com.br/api para acompanhar a disponibilidade.
+5. EAN-Search: não foi possível confirmar uma especificação pública atual de endpoint/API adequada para chamada automática no navegador. O site fica disponível como consulta complementar: https://www.ean-search.org/. Não há scraping.
 
-## Leitura
-A leitura usa `BarcodeDetector`, recurso nativo de navegadores compatíveis. O app solicita os formatos EAN-13, EAN-8, UPC-A, UPC-E e Code 128 disponíveis no aparelho. Alguns navegadores/dispositivos não implementam essa API; nesses casos, use Chrome atualizado ou digite o código no campo manual. A câmera traseira é preferida. O app mantém a câmera ativa até desativá-la e aplica um intervalo antirrepetição de leitura.
+ATUALIZAR NO GITHUB (CELULAR)
+1. Faça um backup JSON no Estoque Fácil antes de atualizar.
+2. Baixe e extraia o ZIP.
+3. Abra seu repositório GitHub: https://github.com/luciluscorporg-bit/estoque-facil (confirme o nome se o seu repositório tiver outro).
+4. Add file > Upload files.
+5. Envie os arquivos extraídos para a raiz. Quando o GitHub perguntar, confirme a substituição de index.html, manifest.webmanifest e sw.js.
+6. Commit changes. Não apague o repositório nem crie outro.
+7. Aguarde o GitHub Pages publicar. Abra https://luciluscorporg-bit.github.io/estoque-facil/ e atualize a página.
+8. Se a versão antiga persistir, feche a aba, abra novamente; se necessário limpe os dados/cache do site. O Service Worker tem cache com versão própria; para forçar atualização, remova dados do site no Chrome e recarregue.
+9. Restaure o backup se os produtos não aparecerem. A atualização não deve apagar IndexedDB, mas o backup é a proteção.
 
-## Pesquisa de produtos
-Ao pesquisar um código, o app consulta primeiro o catálogo local. Se não existir, tenta a API pública Open Food Facts (`world.openfoodfacts.org`). A base é colaborativa e tem cobertura desigual, especialmente para produtos que não sejam alimentos. Nome e quantidade/unidade sugeridos devem ser conferidos. Sem internet, produtos já cadastrados continuam disponíveis e novos podem ser cadastrados manualmente.
+DADOS E PRIVACIDADE
+- Produtos, histórico e metadados ficam no IndexedDB do aparelho/navegador.
+- Token OSCBR fica em localStorage deste navegador, nunca no arquivo do GitHub. Ainda assim, localStorage não é cofre de segredos.
+- Fotos externas são exibidas por URL; não são copiadas para o aparelho. Se o endereço da imagem mudar ou ficar offline, a foto pode não aparecer.
+- O catálogo cadastrado funciona offline; consultas externas exigem internet.
+- O navegador pode bloquear APIs externas por CORS, limites ou indisponibilidade. O cadastro manual permanece disponível.
+- Valide nomes, marca, fabricante e imagens antes de cadastrar. Não use NCM/CEST como orientação fiscal sem conferência profissional.
 
-## Dados e confiabilidade
-Os produtos e o histórico ficam no IndexedDB do navegador, no próprio aparelho/perfil. Fechar o navegador ou atualizar a página não apaga os registros. Limpar os dados do site, desinstalar o navegador ou trocar de aparelho pode apagar os dados; faça backup JSON regularmente e mantenha uma cópia fora do celular. O backup inclui produtos e histórico.
-
-## Exportar
-- CSV: separado por ponto e vírgula, compatível com Excel/Google Planilhas em configurações brasileiras.
-- XLSX: gerado pela biblioteca SheetJS carregada de CDN; precisa de internet para carregar a biblioteca. Se ela não carregar, CSV continua disponível.
-- TXT: linhas no formato `código | produto | quantidade`.
-- Backup JSON: use **Fazer backup**. Para recuperar, toque em **Restaurar backup** e selecione o JSON. A restauração substitui os dados atuais após confirmação.
-
-O navegador baixa os arquivos para Downloads quando não oferece seletor de destino. Em navegadores compatíveis, o app abre a opção de escolher nome e pasta.
-
-## Observações importantes
-- Não há sincronização em nuvem nem múltiplos usuários nesta versão.
-- A pesquisa online não é garantia de identificação correta; confirme o nome antes de cadastrar.
-- Quantidades aceitam valores decimais. Código vazio permite cadastrar produto sem código.
-- No caso de códigos duplicados, o app soma a quantidade no registro existente.
-- Para uso operacional, teste primeiro com poucos produtos e valide os arquivos exportados antes de fazer o inventário completo.
+TESTES
+Foi verificada a estrutura do pacote e a sintaxe JavaScript localmente. Não foi possível executar testes de câmera, IndexedDB no Chrome do usuário nem confirmar CORS/credenciais das APIs a partir do GitHub Pages. Faça um teste com poucos itens antes do inventário real.
